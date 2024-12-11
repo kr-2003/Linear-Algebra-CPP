@@ -74,6 +74,7 @@ Matrix2<T>::Matrix2(const Matrix2<T>& inputMatrix) {
     }
 }
 
+
 template<class T>
 Matrix2<T>::~Matrix2() {
     if(m_matrixData != nullptr) {
