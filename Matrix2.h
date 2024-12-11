@@ -19,7 +19,28 @@ class Matrix2
 
         bool operator== (const Matrix2<T>& rhs);
         template<class U> 
-        friend std::ostream& operator<<(std::ostream& os, const Matrix2<U>& matrix);
+        friend std::ostream& operator<< (std::ostream& os, const Matrix2<U>& matrix);
+
+        template<class U> 
+        friend Matrix2<U> operator+ (const Matrix2<U>& lhs, const Matrix2<U>& rhs);
+        template<class U> 
+        friend Matrix2<U> operator+ (const U& lhs, const Matrix2<U>& rhs);
+        template<class U> 
+        friend Matrix2<U> operator+ (const Matrix2<U>& lhs, const U& rhs);
+
+        template<class U> 
+        friend Matrix2<U> operator- (const Matrix2<U>& lhs, const Matrix2<U>& rhs);
+        template<class U> 
+        friend Matrix2<U> operator- (const U& lhs, const Matrix2<U>& rhs);
+        template<class U> 
+        friend Matrix2<U> operator- (const Matrix2<U>& lhs, const U& rhs);
+
+        template<class U> 
+        friend Matrix2<U> operator* (const Matrix2<U>& lhs, const Matrix2<U>& rhs);
+        template<class U> 
+        friend Matrix2<U> operator* (const U& lhs, const Matrix2<U>& rhs);
+        template<class U> 
+        friend Matrix2<U> operator* (const Matrix2<U>& lhs, const U& rhs);
 
     private:
         int Sub2Ind(int row, int col) const;
@@ -142,3 +163,157 @@ std::ostream& operator<<(std::ostream& os, const Matrix2<T>& matrix) {
     }
     return os;
 }
+
+template<class T>
+Matrix2<T> operator+ (const Matrix2<T>& lhs, const Matrix2<T>& rhs) {
+    int lhs_rows = lhs.GetNumRows();
+    int rhs_rows = rhs.GetNumRows();
+    int lhs_cols = lhs.GetNumCols();
+    int rhs_cols = rhs.GetNumCols();
+
+    if(lhs_rows != rhs_rows || lhs_cols != rhs_cols) {
+        throw std::invalid_argument("Matrices dimensions must match for addition.");
+    }
+
+    Matrix2<T> result(lhs_rows, lhs_cols);
+    for(int i = 0; i < lhs_rows; i++) {
+        for(int j = 0; j < lhs_cols; j++) {
+            result.SetElement(i, j, lhs.GetElement(i, j) + rhs.GetElement(i, j));
+        }
+    }
+
+    return result;
+}
+
+template<class T>
+Matrix2<T> operator+ (const T& lhs, const Matrix2<T>& rhs) {
+    int rhs_rows = rhs.GetNumRows();
+    int rhs_cols = rhs.GetNumCols();
+
+    Matrix2<T> result(rhs_rows, rhs_cols);
+    for(int i = 0; i < rhs_rows; i++) {
+        for(int j = 0; j < rhs_cols; j++) {
+            result.SetElement(i, j, lhs + rhs.GetElement(i, j));
+        }
+    }
+    return result;
+}
+
+template<class T>
+Matrix2<T> operator+ (const Matrix2<T>& lhs, const T& rhs) {
+    int lhs_rows = lhs.GetNumRows();
+    int lhs_cols = lhs.GetNumCols();
+
+    Matrix2<T> result(lhs_rows, lhs_cols);
+    for(int i = 0; i < lhs_rows; i++) {
+        for(int j = 0; j < lhs_cols; j++) {
+            result.SetElement(i, j, rhs + lhs.GetElement(i, j));
+        }
+    }
+    return result;
+}
+
+template<class T>
+Matrix2<T> operator- (const Matrix2<T>& lhs, const Matrix2<T>& rhs) {
+    int lhs_rows = lhs.GetNumRows();
+    int rhs_rows = rhs.GetNumRows();
+    int lhs_cols = lhs.GetNumCols();
+    int rhs_cols = rhs.GetNumCols();
+
+    if(lhs_rows != rhs_rows || lhs_cols != rhs_cols) {
+        throw std::invalid_argument("Matrices dimensions must match for subtraction.");
+    }
+
+    Matrix2<T> result(lhs_rows, lhs_cols);
+    for(int i = 0; i < lhs_rows; i++) {
+        for(int j = 0; j < lhs_cols; j++) {
+            result.SetElement(i, j, lhs.GetElement(i, j) - rhs.GetElement(i, j));
+        }
+    }
+
+    return result;
+}
+
+template<class T>
+Matrix2<T> operator- (const T& lhs, const Matrix2<T>& rhs) {
+    int rhs_rows = rhs.GetNumRows();
+    int rhs_cols = rhs.GetNumCols();
+
+    Matrix2<T> result(rhs_rows, rhs_cols);
+    for(int i = 0; i < rhs_rows; i++) {
+        for(int j = 0; j < rhs_cols; j++) {
+            result.SetElement(i, j, lhs - rhs.GetElement(i, j));
+        }
+    }
+    return result;
+}
+
+template<class T>
+Matrix2<T> operator- (const Matrix2<T>& lhs, const T& rhs) {
+    int lhs_rows = lhs.GetNumRows();
+    int lhs_cols = lhs.GetNumCols();
+
+    Matrix2<T> result(lhs_rows, lhs_cols);
+    for(int i = 0; i < lhs_rows; i++) {
+        for(int j = 0; j < lhs_cols; j++) {
+            result.SetElement(i, j, lhs.GetElement(i, j) - rhs);
+        }
+    }
+    return result;
+}
+
+template<class T>
+Matrix2<T> operator* (const Matrix2<T>& lhs, const Matrix2<T>& rhs) {
+    int lhs_rows = lhs.GetNumRows();
+    int rhs_rows = rhs.GetNumRows();
+    int lhs_cols = lhs.GetNumCols();
+    int rhs_cols = rhs.GetNumCols();
+
+    if(lhs_cols != rhs_rows) {
+        throw std::invalid_argument("Left matrice's number of columns should match with right matrice's number of rows for multiplication.");
+    }
+
+    Matrix2<T> result(lhs_rows, rhs_cols);
+    for(int i = 0; i < lhs_rows; i++) {
+        for(int j = 0; j < rhs_cols; j++) {
+            T tempAns = 0.0;
+            for(int k = 0; k < lhs_cols; k++) {
+                tempAns += lhs.GetElement(i, k) * rhs.GetElement(k, j);
+            }
+            result.SetElement(i, j, tempAns);
+        }
+    }
+
+    return result;
+}
+
+template<class T>
+Matrix2<T> operator* (const T& lhs, const Matrix2<T>& rhs) {
+    int rhs_rows = rhs.GetNumRows();
+    int rhs_cols = rhs.GetNumCols();
+
+    Matrix2<T> result(rhs_cols, rhs_cols);
+    for(int i = 0; i < rhs_rows; i++) {
+        for(int j = 0; j < rhs_cols; j++) {
+            result.SetElement(i, j, lhs * rhs.GetElement(i, j));
+        }
+    }
+    return result;
+}
+
+template<class T>
+Matrix2<T> operator* (const Matrix2<T>& lhs, const T& rhs) {
+    int lhs_rows = lhs.GetNumRows();
+    int lhs_cols = lhs.GetNumCols();
+
+    Matrix2<T> result(lhs_cols, lhs_cols);
+    for(int i = 0; i < lhs_rows; i++) {
+        for(int j = 0; j < lhs_cols; j++) {
+            result.SetElement(i, j, lhs.GetElement(i, j) * rhs);
+        }
+    }
+    return result;
+}
+
+
+

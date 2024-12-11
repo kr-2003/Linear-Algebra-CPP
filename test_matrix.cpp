@@ -24,6 +24,10 @@ int main() {
 
     std::cout << mat4 << std::endl;
 
+    Matrix2<int> mat5 = mat3 * mat4;
+
+    std::cout << mat5 << std::endl;
+
     // Test equality operator
     if (mat3 == mat4) {
         std::cout << "Matrix 3 and Matrix 4 are equal." << std::endl;
