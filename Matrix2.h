@@ -53,7 +53,8 @@ class Matrix2
         bool MultiplyRowAndAdd(int r1, int r2, T fact) const;
         int MaxElementRow(int c) const;
         bool JoinMatrix(const Matrix2<T>& rhs);
-        bool SeparateMatrix(int col);
+        Matrix2<T> SeparateMatrix(int col);
+        bool IsIdentity(const Matrix2<T>& mat);
     
     private:
         T *m_matrixData;
@@ -215,17 +216,21 @@ bool Matrix2<T>::JoinMatrix(const Matrix2<T>& rhs) {
 
 
 template<class T>
-bool Matrix2<T>::SeparateMatrix(int col) {
+Matrix2<T> Matrix2<T>::SeparateMatrix(int col) {
     int rows = GetNumRows();
     int cols = GetNumCols();
 
     T* temp_data = new T[rows * (cols - col)];
 
     // std::cout << cols << std::endl;
+    T* temp_data_left = new T[rows * col];
 
     for(int i = 0; i < rows; i++) {
         for(int j = col; j < cols; j++) {
             temp_data[i * (cols - col) + j - col] = m_matrixData[i * cols + j];
+        }
+        for(int j = 0; j < col; j++) {
+            temp_data_left[i * col + j] = m_matrixData[i * cols + j];
         }
     }
 
@@ -236,8 +241,10 @@ bool Matrix2<T>::SeparateMatrix(int col) {
     for(int i = 0; i < m_nElements; i++) {
         m_matrixData[i] = temp_data[i];
     }
+    Matrix2<T> left_matrix(m_nRows, col, temp_data_left);
     delete[] temp_data;
-    return true;
+    delete[] temp_data_left;
+    return left_matrix;
 }
 
 
@@ -517,16 +524,35 @@ bool Matrix2<T>::invertMatrix() {
     }
 
 
-    // std::cout << "AUGMENTED: " << std::endl;
+    std::cout << "AUGMENTED: " << std::endl;
 
-    // for (int i = 0; i < m_nRows; ++i) {
-    //     for (int j = 0; j < m_nCols; ++j) {
-    //         std::cout << m_matrixData[i * m_nCols + j] << " ";
-    //     }
-    //     std::cout << std::endl;
-    // }
+    for (int i = 0; i < m_nRows; ++i) {
+        for (int j = 0; j < m_nCols; ++j) {
+            std::cout << m_matrixData[i * m_nCols + j] << " ";
+        }
+        std::cout << std::endl;
+    }
 
-    SeparateMatrix(n);
+    Matrix2<T> left_matrix = SeparateMatrix(n);
+    if(!IsIdentity(left_matrix)) {
+        throw std::invalid_argument("This matrix cannot be inverted.");
+    }
+    return true;
+}
+
+template<class T>
+bool Matrix2<T>::IsIdentity(const Matrix2<T>& mat) {
+    int rows = mat.GetNumRows();
+    int cols = mat.GetNumCols();
+    if(rows != cols) {
+        throw std::invalid_argument("It should be a square matrix for identity check.");
+    }
+    for(int i = 0; i < rows; i++) {
+        for(int j = 0; j < cols; j++) {
+            if(i == j && mat.GetElement(i, j) != 1) return false;
+            if(i != j && mat.GetElement(i, j) != 0) return false;
+        }
+    }
     return true;
 }
 

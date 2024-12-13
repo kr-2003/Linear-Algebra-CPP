@@ -42,7 +42,7 @@ int main() {
 
     mat3.invertMatrix();
 
-    double input[9] = {4, 0, 1, 0, 0, 1, 1, 1, 1};
+    double input[9] = {0, 0, 1, 0, 0, 1, 1, 1, 1};
     Matrix2<double> mat5(3, 3, input);
 
     mat5.invertMatrix();
