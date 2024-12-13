@@ -42,8 +42,18 @@ class Matrix2
         template<class U> 
         friend Matrix2<U> operator* (const Matrix2<U>& lhs, const U& rhs);
 
-    private:
+        bool GetIdentityMatrix();
+
+        bool invertMatrix();
+
+    public:
         int Sub2Ind(int row, int col) const;
+        bool SwapRows(int r1, int r2) const;
+        bool MultiplyRow(int r, T fact) const;
+        bool MultiplyRowAndAdd(int r1, int r2, T fact) const;
+        int MaxElementRow(int c) const;
+        bool JoinMatrix(const Matrix2<T>& rhs);
+        bool SeparateMatrix(int col);
     
     private:
         T *m_matrixData;
@@ -90,7 +100,7 @@ Matrix2<T>::Matrix2(const Matrix2<T>& inputMatrix) {
     m_matrixData = new T[m_nElements];
     for(int i = 0; i < m_nRows; i++) {
         for(int j = 0; j < m_nCols; j++) {
-            m_matrixData[i * m_nRows + j] = inputMatrix.GetElement(i, j);
+            m_matrixData[i * m_nCols + j] = inputMatrix.GetElement(i, j);
         }
     }
 }
@@ -111,8 +121,125 @@ T Matrix2<T>::GetElement(int row, int col) const {
 
 template<class T>
 int Matrix2<T>::Sub2Ind(int row, int col) const {
-    return row * m_nRows + col;
+    return row * m_nCols + col;
 }
+
+template<class T>
+bool Matrix2<T>::SwapRows(int r1, int r2) const {
+    int rows = GetNumRows();
+    if(r1 >= rows || r2 >= rows || r1 < 0 || r2 < 0) return false;
+    int cols = GetNumCols();
+    for(int j = 0; j < cols; j++) {
+        int temp = m_matrixData[r2 * cols + j];
+        m_matrixData[r2 * cols + j] = m_matrixData[r1 * cols + j];
+        m_matrixData[r1 * cols + j] = temp;
+    }
+    return true;
+}
+
+template<class T>
+bool Matrix2<T>::MultiplyRow(int r, T fact) const {
+    int rows = GetNumRows();
+    if(r >= rows || r < 0) return false;
+    int cols = GetNumCols();
+    for(int j = 0; j < cols; j++) {
+        m_matrixData[r * cols + j] *= fact;
+    }
+    return true;
+}
+
+template<class T>
+bool Matrix2<T>::MultiplyRowAndAdd(int r1, int r2, T fact) const {
+    int rows = GetNumRows();
+    if(r1 >= rows || r2 >= rows || r1 < 0 || r2 < 0) return false;
+    int cols = GetNumCols();
+    for(int j = 0; j < cols; j++) {
+        m_matrixData[r2 * cols + j] += fact * m_matrixData[r1 * cols + j];
+    }
+    return true;
+}
+
+template<class T>
+int Matrix2<T>::MaxElementRow(int c) const {
+    int rows = GetNumRows();
+    int ind = 0;
+    int cols = GetNumCols();
+    T maxel = m_matrixData[0 * cols + c];
+    for(int i = 0; i < rows; i++) {
+        if(m_matrixData[i * cols + c] > maxel) {
+            maxel = m_matrixData[i * cols + c];
+            ind = i;
+        }
+    }
+    return ind;
+}
+
+template<class T>
+bool Matrix2<T>::JoinMatrix(const Matrix2<T>& rhs) {
+    int lhs_rows = GetNumRows();
+    int rhs_rows = rhs.GetNumRows();
+    if(lhs_rows != rhs_rows) {
+        throw std::invalid_argument("Attempt to join matrices with different number of rows is invalid.");
+    }
+    int lhs_cols = GetNumCols();
+    int rhs_cols = rhs.GetNumCols();
+    T* temp_data = new T[lhs_rows * (lhs_cols + rhs_cols)];
+    int temp_ind = 0;
+    for(int i = 0; i < lhs_rows; i++) {
+        for(int j = 0; j < (lhs_cols + rhs_cols); j++) {
+            temp_ind = i * (lhs_cols + rhs_cols) + j;
+            if(j < lhs_cols) {
+                temp_data[temp_ind] = m_matrixData[i * lhs_cols + j];
+            } else {
+                temp_data[temp_ind] = rhs.m_matrixData[i * rhs_cols + j - lhs_cols];
+            }
+
+            // std::cout << temp_ind << " ";
+        } 
+
+        // std::cout << std::endl;
+    }
+
+    m_nCols = lhs_cols + rhs_cols;
+    m_nElements = m_nRows * m_nCols;
+    delete[] m_matrixData;
+    m_matrixData = new T[m_nElements];
+    for(int i = 0; i < m_nElements; i++) {
+        m_matrixData[i] = temp_data[i];
+        
+    }
+    delete[] temp_data;
+
+    return true;
+}
+
+
+template<class T>
+bool Matrix2<T>::SeparateMatrix(int col) {
+    int rows = GetNumRows();
+    int cols = GetNumCols();
+
+    T* temp_data = new T[rows * (cols - col)];
+
+    // std::cout << cols << std::endl;
+
+    for(int i = 0; i < rows; i++) {
+        for(int j = col; j < cols; j++) {
+            temp_data[i * (cols - col) + j - col] = m_matrixData[i * cols + j];
+        }
+    }
+
+    m_nCols = cols - col;
+    m_nElements = m_nRows * m_nCols;
+    delete[] m_matrixData;
+    m_matrixData = new T[m_nElements];
+    for(int i = 0; i < m_nElements; i++) {
+        m_matrixData[i] = temp_data[i];
+    }
+    delete[] temp_data;
+    return true;
+}
+
 
 template<class T>
 bool Matrix2<T>::SetElement(int row, int col, T data) {
@@ -315,5 +442,92 @@ Matrix2<T> operator* (const Matrix2<T>& lhs, const T& rhs) {
     return result;
 }
 
+
+template<class T>
+bool Matrix2<T>::GetIdentityMatrix() {
+    if(m_nCols != m_nRows) {
+        throw std::invalid_argument("The matrix should be square matrix to get its identity.");
+    }
+
+    for(int i = 0; i < m_nElements; i++) {
+        m_matrixData[i] = 0.0;
+    }
+
+    for(int i = 0; i < m_nRows; i++) {
+        m_matrixData[i * m_nCols + i] = 1.0;
+    }
+    
+    return true;
+}
+
+template<class T>
+bool Matrix2<T>::invertMatrix() {
+    if(m_nCols != m_nRows) {
+        throw std::invalid_argument("The matrix should be square matrix to get its inversion.");
+    }
+
+    int n = m_nCols;
+
+    Matrix2<T> identity_matrix(m_nRows, m_nRows);
+    identity_matrix.GetIdentityMatrix();
+
+    std::cout << "IDENTITY: " << std::endl;
+    std::cout << identity_matrix << std::endl;
+
+    JoinMatrix(identity_matrix);
+
+    std::cout << "AUGMENTED: " << std::endl;
+
+    for (int i = 0; i < m_nRows; ++i) {
+        for (int j = 0; j < m_nCols; ++j) {
+            std::cout << m_matrixData[i * m_nCols + j] << " ";
+        }
+        std::cout << std::endl;
+    }
+
+    int currRow = 0, currCol = 0;
+    while(currRow < n && currCol < n) {
+        T currPivotVal = GetElement(currRow, currCol);
+        if(currPivotVal != 0) {
+            T fact = 1.0 / currPivotVal;
+            MultiplyRow(currRow, fact);
+
+            for(int r = 0; r < n; r++) {
+                if(r != currRow) {
+                    T fact = -GetElement(r, currCol);
+                    MultiplyRowAndAdd(currRow, r, fact);
+                }
+            }
+        } else {
+            int ind = MaxElementRow(currCol);
+            SwapRows(ind, currRow);
+            continue;
+        }
+        currRow++;
+        currCol++;
+
+    //     std::cout << "AUGMENTED: " << std::endl;
+
+    // for (int i = 0; i < m_nRows; ++i) {
+    //     for (int j = 0; j < m_nCols; ++j) {
+    //         std::cout << m_matrixData[i * m_nCols + j] << " ";
+    //     }
+    //     std::cout << std::endl;
+    // }
+    }
+
+
+    // std::cout << "AUGMENTED: " << std::endl;
+
+    // for (int i = 0; i < m_nRows; ++i) {
+    //     for (int j = 0; j < m_nCols; ++j) {
+    //         std::cout << m_matrixData[i * m_nCols + j] << " ";
+    //     }
+    //     std::cout << std::endl;
+    // }
+
+    SeparateMatrix(n);
+    return true;
+}
 
 
