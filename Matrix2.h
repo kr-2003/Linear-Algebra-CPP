@@ -46,6 +46,10 @@ class Matrix2
 
         bool invertMatrix();
 
+        std::pair<Matrix2<T>, Matrix2<T>> LUdecomposition() const;
+
+        T determinant();
+
     public:
         int Sub2Ind(int row, int col) const;
         bool SwapRows(int r1, int r2) const;
@@ -556,4 +560,47 @@ bool Matrix2<T>::IsIdentity(const Matrix2<T>& mat) {
     return true;
 }
 
+template<class T>
+std::pair<Matrix2<T>, Matrix2<T>> Matrix2<T>::LUdecomposition() const {
+    if(GetNumRows() != GetNumCols()) {
+        throw std::invalid_argument("Matrix should be a square matrix for LU Decomposition.");
+    }
 
+    int n = GetNumRows();
+
+    Matrix2<T> lower(n, n), upper(n, n);
+
+    for(int i = 0; i < n; i++) {
+        for(int k = i; k < n; k++) {
+            T sum = 0;
+            for(int j = 0; j < i; j++) {
+                sum += (lower.GetElement(i, j) * upper.GetElement(j, k));
+            }
+            upper.SetElement(i, k, GetElement(i, k) - sum);
+        }
+        for(int k = i; k < n; k++) {
+            if(i == k) {
+                lower.SetElement(i, i, 1.0);
+            } else {
+                T sum = 0;
+                for(int j = 0; j < i; j++) {
+                    sum += (lower.GetElement(k, j) * upper.GetElement(j, i));
+                }
+                lower.SetElement(k, i, (GetElement(k, i) - sum) / upper.GetElement(i, i));
+            }
+        }
+    }
+
+    return {lower, upper};
+}
+
+template<class T>
+T Matrix2<T>::determinant() {
+    Matrix2<T> upper = LUdecomposition().second;
+    T ans = 1;
+    int n = upper.GetNumRows();
+    for(int i = 0; i < n; i++) {
+        ans *= upper.GetElement(i, i);
+    }
+    return ans;
+}

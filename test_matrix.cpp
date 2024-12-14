@@ -42,13 +42,20 @@ int main() {
 
     mat3.invertMatrix();
 
-    double input[9] = {0, 0, 1, 0, 0, 1, 1, 1, 1};
+    double input[9] = {2, -1, -2, -4, 6, 3, -4, -2, 8};
     Matrix2<double> mat5(3, 3, input);
 
-    mat5.invertMatrix();
+    // mat5.invertMatrix();
 
-    std::cout << mat5 << std::endl;
+    // std::cout << mat5 << std::endl;
+
+    std::pair<Matrix2<double>, Matrix2<double>> res = mat5.LUdecomposition();
+
     // Test equality operator
+    std::cout << res.first << std::endl;
+    std::cout << res.second << std::endl;
+
+    std::cout << mat5.determinant() << std::endl;
     if (mat3 == mat4) {
         std::cout << "Matrix 3 and Matrix 4 are equal." << std::endl;
     } else {
