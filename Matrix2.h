@@ -1,5 +1,5 @@
 #ifndef MATRIX2_H
-#endif
+#define MATRIX2_H
 
 template<class T>
 class Matrix2 
@@ -604,3 +604,6 @@ T Matrix2<T>::determinant() {
     }
     return ans;
 }
+
+
+#endif // MATRIX2_H
