@@ -1,5 +1,6 @@
 #include <iostream>
 #include "Vector.h"
+#include "Matrix2.h"
 
 int main() {
     std::vector<double> inputData = {1.0, 12.0, 89.0};
@@ -26,6 +27,12 @@ int main() {
     std::cout << "CROSS: " << std::endl;
     std::cout << v1.cross(v1, v2) << std::endl;
 
+    double input[9] = {1,2,3,3,2,1,2,1,3};
+    Matrix2<double> mat5(3, 3, input);
+
+    std::cout << mat5 << std::endl;
+
+    std::cout << mat5 * v1 << std::endl;
 
 
     return 0;

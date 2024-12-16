@@ -16,6 +16,11 @@ class abVector{
         int GetNumDims() const;
 
         T GetElement(int ind) const;
+        bool SetElement(int ind, const T& val);
+
+        T Norm() const;
+
+        abVector<T> Normalized() const;
 
         abVector<T> operator+ (const abVector<T>& rhs);
         abVector<T> operator- (const abVector<T>& rhs);
@@ -66,6 +71,41 @@ T abVector<T>::GetElement(int ind) const {
         return m_vectorData[ind];
     }
 }
+
+template<class T>
+bool abVector<T>::SetElement(int ind, const T& val) {
+    if(ind >= m_nDims) {
+        throw std::invalid_argument("Index is out of range.");
+    } else {
+        m_vectorData[ind] = val;
+        return true;
+    }
+}
+
+template<class T>
+T abVector<T>::Norm() const {
+    int n = GetNumDims();
+    T ans = 0;
+    for(int i = 0; i < n; i++) {
+        T x =  GetElement(i);
+        ans += x * x;
+    }
+    ans = sqrt(ans);
+    return ans;
+}
+
+template<class T>
+abVector<T> abVector<T>::Normalized() const {
+    T norm = Norm();
+    int n = GetNumDims();
+    std::vector<T> inputData;
+    for(int i = 0; i < n; i++) {
+        inputData.push_back(GetElement(i) / norm);
+    }
+    abVector<T> res(inputData);
+    return res;
+}
+
 
 template<class T>
 abVector<T> abVector<T>::operator+ (const abVector<T>& rhs) {

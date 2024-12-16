@@ -1,6 +1,8 @@
 #ifndef MATRIX2_H
 #define MATRIX2_H
 
+#include "Vector.h"
+
 template<class T>
 class Matrix2 
 {
@@ -8,6 +10,7 @@ class Matrix2
         Matrix2();
         Matrix2(int nRows, int nCols);
         Matrix2(int nRows, int nCols, const T *inputData);
+        Matrix2(int nRows, int nCols, std::vector<T>& inputData);
         Matrix2(const Matrix2<T>& inputMatrix);
 
         ~Matrix2();
@@ -41,6 +44,8 @@ class Matrix2
         friend Matrix2<U> operator* (const U& lhs, const Matrix2<U>& rhs);
         template<class U> 
         friend Matrix2<U> operator* (const Matrix2<U>& lhs, const U& rhs);
+        template<class U>
+        friend abVector<U> operator* (const Matrix2<U>& lhs, const abVector<U>& rhs);
 
         bool GetIdentityMatrix();
 
@@ -49,6 +54,8 @@ class Matrix2
         std::pair<Matrix2<T>, Matrix2<T>> LUdecomposition() const;
 
         T determinant();
+
+        Matrix2<T> RowEchelon();
 
     public:
         int Sub2Ind(int row, int col) const;
@@ -59,6 +66,7 @@ class Matrix2
         bool JoinMatrix(const Matrix2<T>& rhs);
         Matrix2<T> SeparateMatrix(int col);
         bool IsIdentity(const Matrix2<T>& mat);
+        bool CloseEnough(const T& lhs, const T& rhs);
     
     private:
         T *m_matrixData;
@@ -98,6 +106,17 @@ Matrix2<T>::Matrix2(int nRows, int nCols, const T *inputData) {
 }
 
 template<class T>
+Matrix2<T>::Matrix2(int nRows, int nCols, std::vector<T>& inputData) {
+    m_nRows = nRows;
+    m_nCols = nCols;
+    m_nElements = m_nRows * m_nCols;
+    m_matrixData = new T[m_nElements];
+    for(int i = 0; i < m_nElements; i++) {
+        m_matrixData[i] = inputData[i];
+    }
+}
+
+template<class T>
 Matrix2<T>::Matrix2(const Matrix2<T>& inputMatrix) {
     m_nRows = inputMatrix.GetNumRows();
     m_nCols = inputMatrix.GetNumCols();
@@ -116,6 +135,11 @@ Matrix2<T>::~Matrix2() {
     if(m_matrixData != nullptr) {
         delete[] m_matrixData;
     }
+}
+
+template<class T>
+bool Matrix2<T>::CloseEnough(const T& lhs, const T& rhs) {
+    return abs(lhs - rhs) < 1e-9;
 }
 
 template<class T>
@@ -453,6 +477,29 @@ Matrix2<T> operator* (const Matrix2<T>& lhs, const T& rhs) {
     return result;
 }
 
+template<class T>
+abVector<T> operator* (const Matrix2<T>& lhs, const abVector<T>& rhs) {
+    int dims = rhs.GetNumDims();
+    int rows = lhs.GetNumRows();
+    int cols = lhs.GetNumCols();
+    if(cols != dims) {
+        throw std::invalid_argument("Number of columns in left matrix should be equal to number of dimensions of the vector on right.");
+    } else {
+        std::vector<T> inputData;
+        for(int i = 0; i < rows; i++) {
+            T res = 0.0;
+            for(int j = 0; j < cols; j++) {
+                res += lhs.GetElement(i, j) * rhs.GetElement(j);
+            }
+            inputData.push_back(res);
+        }
+        
+        abVector<T> resultant(inputData);
+
+        return resultant;
+    }
+}
+
 
 template<class T>
 bool Matrix2<T>::GetIdentityMatrix() {
@@ -482,24 +529,11 @@ bool Matrix2<T>::invertMatrix() {
     Matrix2<T> identity_matrix(m_nRows, m_nRows);
     identity_matrix.GetIdentityMatrix();
 
-    std::cout << "IDENTITY: " << std::endl;
-    std::cout << identity_matrix << std::endl;
-
     JoinMatrix(identity_matrix);
-
-    std::cout << "AUGMENTED: " << std::endl;
-
-    for (int i = 0; i < m_nRows; ++i) {
-        for (int j = 0; j < m_nCols; ++j) {
-            std::cout << m_matrixData[i * m_nCols + j] << " ";
-        }
-        std::cout << std::endl;
-    }
-
     int currRow = 0, currCol = 0;
     while(currRow < n && currCol < n) {
         T currPivotVal = GetElement(currRow, currCol);
-        if(currPivotVal != 0) {
+        if(!CloseEnough(currPivotVal, 0.0)) {
             T fact = 1.0 / currPivotVal;
             MultiplyRow(currRow, fact);
 
@@ -516,25 +550,6 @@ bool Matrix2<T>::invertMatrix() {
         }
         currRow++;
         currCol++;
-
-    //     std::cout << "AUGMENTED: " << std::endl;
-
-    // for (int i = 0; i < m_nRows; ++i) {
-    //     for (int j = 0; j < m_nCols; ++j) {
-    //         std::cout << m_matrixData[i * m_nCols + j] << " ";
-    //     }
-    //     std::cout << std::endl;
-    // }
-    }
-
-
-    std::cout << "AUGMENTED: " << std::endl;
-
-    for (int i = 0; i < m_nRows; ++i) {
-        for (int j = 0; j < m_nCols; ++j) {
-            std::cout << m_matrixData[i * m_nCols + j] << " ";
-        }
-        std::cout << std::endl;
     }
 
     Matrix2<T> left_matrix = SeparateMatrix(n);
@@ -603,6 +618,50 @@ T Matrix2<T>::determinant() {
         ans *= upper.GetElement(i, i);
     }
     return ans;
+}
+
+template<class T>
+Matrix2<T> Matrix2<T>::RowEchelon() {
+    int nrows = GetNumRows();
+    int ncols = GetNumCols();
+
+    if(ncols < nrows) {
+        throw std::invalid_argument("Number of columns should be greater than or equal to number of rows.");
+    }
+
+    int currRow = 0, currCol = 0;
+    Matrix2<T> copyMatrix(nrows, ncols, m_matrixData);
+    while(currRow < nrows && currCol < nrows) {
+        T currPivotVal = copyMatrix.GetElement(currRow, currCol);
+        if(!copyMatrix.CloseEnough(currPivotVal, 0.0)) {
+            T fact = 1.0 / currPivotVal;
+            copyMatrix.MultiplyRow(currRow, fact);
+
+            for(int r = currRow + 1; r < nrows; r++) {
+                if(r != currRow) {
+                    T fact = -copyMatrix.GetElement(r, currCol);
+                    copyMatrix.MultiplyRowAndAdd(currRow, r, fact);
+                }
+            }
+        } else {
+            int ind = copyMatrix.MaxElementRow(currCol);
+            copyMatrix.SwapRows(ind, currRow);
+            if(copyMatrix.CloseEnough(copyMatrix.GetElement(currRow, currCol), 0.0)) {
+                currRow++;
+                currCol++;
+            }
+            continue;
+        }
+        currRow++;
+        currCol++;
+
+        std::cout << currRow << " " << currCol << std::endl;
+    }
+
+    std::cout << "HEY" << std::endl;
+
+    return copyMatrix;
+
 }
 
 
