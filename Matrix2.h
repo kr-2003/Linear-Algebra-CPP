@@ -57,12 +57,17 @@ class Matrix2
 
         Matrix2<T> RowEchelon();
 
+        bool IsRowEchelon();
+
+        int Rank();
+
     public:
         int Sub2Ind(int row, int col) const;
         bool SwapRows(int r1, int r2) const;
         bool MultiplyRow(int r, T fact) const;
         bool MultiplyRowAndAdd(int r1, int r2, T fact) const;
         int MaxElementRow(int c) const;
+        int MaxElementRowBelow(int c, int r) const;
         bool JoinMatrix(const Matrix2<T>& rhs);
         Matrix2<T> SeparateMatrix(int col);
         bool IsIdentity(const Matrix2<T>& mat);
@@ -202,6 +207,22 @@ int Matrix2<T>::MaxElementRow(int c) const {
     }
     return ind;
 }
+
+template<class T>
+int Matrix2<T>::MaxElementRowBelow(int c, int r) const {
+    int rows = GetNumRows();
+    int ind = -1;
+    int cols = GetNumCols();
+    T maxel = m_matrixData[0 * cols + c];
+    for(int i = r + 1; i < rows; i++) {
+        if(m_matrixData[i * cols + c] > maxel) {
+            maxel = m_matrixData[i * cols + c];
+            ind = i;
+        }
+    }
+    return ind;
+}
+
 
 template<class T>
 bool Matrix2<T>::JoinMatrix(const Matrix2<T>& rhs) {
@@ -644,24 +665,87 @@ Matrix2<T> Matrix2<T>::RowEchelon() {
                 }
             }
         } else {
-            int ind = copyMatrix.MaxElementRow(currCol);
-            copyMatrix.SwapRows(ind, currRow);
-            if(copyMatrix.CloseEnough(copyMatrix.GetElement(currRow, currCol), 0.0)) {
-                currRow++;
+            int ind = copyMatrix.MaxElementRowBelow(currCol, currRow);
+            if(ind == -1) {
                 currCol++;
+                currRow++;
+                continue;
+            }
+            if(copyMatrix.CloseEnough(copyMatrix.GetElement(ind, currCol), 0.0)) {
+                currCol++;
+            } else {
+                copyMatrix.SwapRows(ind, currRow);
             }
             continue;
         }
         currRow++;
         currCol++;
-
-        std::cout << currRow << " " << currCol << std::endl;
     }
 
     std::cout << "HEY" << std::endl;
 
     return copyMatrix;
 
+}
+
+template<class T>
+bool Matrix2<T>::IsRowEchelon() {
+    int nrows = GetNumRows();
+    int ncols = GetNumCols();
+
+    int curr = -1;
+
+    // std::cout << nrows << " " << ncols << std::endl;
+
+    std::vector<int> pivots;
+
+    for(int i = 0; i < nrows; i++) {
+        bool flag = false;
+        for(int j = 0; j < ncols; j++) {
+            if(!CloseEnough(GetElement(i, j), 0.0)) {
+                if(j <= curr) {
+                    return false;
+                }
+                curr = j;
+                flag = true;
+                break;
+            }
+        }
+        if(flag) pivots.push_back(curr);
+        else pivots.push_back(ncols);
+    }
+
+    for(int i = 0; i < nrows; i++) {
+        if(pivots[i] != ncols) {
+            for(int r = i + 1; r < nrows; r++) {
+                if(!CloseEnough(GetElement(r, pivots[i]), 0.0)) {
+                    return false;
+                }
+            }
+        } 
+    }
+    return true;
+}
+
+template<class T>
+int Matrix2<T>::Rank() {
+    Matrix2<T> rowEchelonMatrix = RowEchelon();
+    if(rowEchelonMatrix.IsRowEchelon()) {
+        int ans = 0;
+        int nrows = GetNumRows();
+        int ncols = GetNumCols();
+        for(int i = 0; i < nrows; i++) {
+            bool flag = false;
+            for(int j = 0; j < ncols; j++) {
+                flag |= (!CloseEnough(GetElement(i, j), 0.0));
+            }
+            ans += (flag ? 1 : 0);
+        }
+        return ans;
+    } else {
+        // to be continued;
+        return -1;
+    }
 }
 
 

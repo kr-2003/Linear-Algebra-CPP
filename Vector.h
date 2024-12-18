@@ -11,6 +11,7 @@ class abVector{
     public:
         abVector();
         abVector(std::vector<T>& inputData);
+        abVector(int numdims);
         ~abVector();
 
         int GetNumDims() const;
@@ -51,6 +52,12 @@ template<class T>
 abVector<T>::abVector(std::vector<T>& inputData) {
     m_nDims = inputData.size();
     m_vectorData = inputData;
+}
+
+template<class T>
+abVector<T>::abVector(int numdims) {
+    m_nDims = numdims;
+    m_vectorData = std::vector<T>(m_nDims, 0);
 }
 
 template<class T>
